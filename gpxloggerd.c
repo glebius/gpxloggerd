@@ -196,7 +196,7 @@ process(struct gps_data_t *gpsdata)
 		pt = ot;
 
 	/* -I filter */
-	if (abs(t - ot) < interval)
+	if (labs(t - ot) < interval)
 		return;
 
 	if (minmove || minbearing)
