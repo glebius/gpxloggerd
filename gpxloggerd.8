@@ -1,0 +1,162 @@
+.\" Copyright (c) 2010,2011 Gleb Smirnoff
+.\" 
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $Id: gpxloggerd.8,v 1.11 2011/03/25 22:48:49 glebius Exp $
+.\"
+.Dd March 24, 2011
+.Dt GPXLOGGERD 8
+.Os
+.Sh NAME
+.Nm gpxloggerd
+.Nd GPX logging daemon
+.Sh SYNOPSIS
+.Nm
+.Op Fl dhVv
+.Op Fl D Ar level
+.Op Fl f Ar template
+.Op Fl u Ar user Op :group
+.Op Fl p Ar pidfile
+.Op Fl m Ar meters
+.Op Fl M Ar meters
+.Op Fl a Ar degrees
+.Op Fl I Ar interval
+.Op Fl i Ar timeout
+.Op Ar server Op Ar :port Op Ar :device
+.Sh DESCRIPTION
+The
+.Nm
+is a tiny daemon that connects to
+.Xr GPSD 8
+and logs received fix information in the
+.Tn GPX
+format.
+By default the
+.Nm
+connects to
+.Xr GPSD 8
+at the
+.Li localhost:2947
+and logs to stdout
+.Tn GPX
+data for all
+.Tn GPS
+devices served be the daemon.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl h
+Print usage and exit.
+.It Fl V
+Print version number and exit.
+.It Fl v
+Be as verbose as possible when writing
+.Tn GPX
+log.
+For now this means logging of
+.Va Aq fix ,
+.Va Aq sat ,
+.Va Aq hdop ,
+.Va Aq vdop
+and
+.Va Aq pdop
+fields, which bloats size of produced
+.Tn GPX
+significantly.
+By default this option is turned off, and only coordinates, time and
+elevation are logged.
+.It Fl d
+Detach from terminal and become a daemon.
+.It Fl D Ar level
+Set the underlying
+.Xr libgps 3
+library to the given debug level.
+.It Fl f Ar template
+Write data to the given file instead of stdout.
+The
+.Ar template
+isn't a bare filename, but can be a format for the
+.Xr strftime 3 .
+.It Fl u Ar user Op :group
+Lower the daemon priveleges to the specified user and group.
+.It Fl p Ar pidfile
+Write the daemon pid to the specified file.
+.It Fl m Ar meters
+Suppress logging of track segment in case if it lays within the
+specified distance away from the previous logged track segment.
+This option is useful to avoid polluted
+.Tn GPX
+traces at parking lots and other places, where vehicle stands
+still for long time.
+The option is turned off by default.
+.It Fl a Ar degrees
+Suppress logging of track segment unless the course (azimuth, bearing)
+of the vehicle has changed to a value equal or greater than the specified
+angle in degrees.
+This option is useful to make traces on straight roads more sparse.
+The option is turned off by default.
+.It Fl M Ar meters
+Set maximum track segment length.
+This option is meaningful only in conjunction with the
+.Fl a
+option.
+The default value is 200 meters.
+.It Fl i Ar timeout
+Start new track if the time jump between current fix and
+previous logged one is above the
+.Ar timeout.
+By default
+.Ar timeout
+value is 300 seconds.
+.It Fl I Ar interval
+Specify logging interval between trackpoints in seconds.
+The default one is one second.
+.El
+.Pp
+When the
+.Nm
+daemon receives
+.Dv SIGHUP
+it finalizes
+.Tn GPX
+in the current output file, closes it and then starts a new one using
+the configured template as a file name.
+.Sh SEE ALSO
+.Xr GPSD 8 ,
+.Xr syslogd 8 ,
+.Xr libgps 3 ,
+.Xr daemon 3 ,
+.Xr setuid 3 ,
+.Xr strftime 3
+.Pa http://www.topografix.com/GPX/1/1/
+.Sh AUTHORS
+.An -nosplit
+The
+.Nm
+is based on the
+.Nm gpxlogger
+from the GPSD project written by
+.An Amaury Jacquot
+and
+.An Chris Kuethe .
+The author of this fork is
+.An Gleb Smirnoff .
