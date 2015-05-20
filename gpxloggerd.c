@@ -54,8 +54,8 @@ static char	*o_template;
 static FILE	*logfile;
 static char	*progname;
 static char 	*device;
-static char 	*server = "localhost";
-static char 	*port = DEFAULT_GPSD_PORT;
+static const char *server = "localhost";
+static const char *port = DEFAULT_GPSD_PORT;
 static char	*pidfile;
 static time_t	timeout = 300;	/* seconds */
 static time_t	interval = 1;	/* seconds */
