@@ -28,8 +28,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $Id: gpxloggerd.c,v 1.30 2011/03/24 15:24:18 glebius Exp $
  */
 
 #include <sys/types.h>
@@ -134,15 +132,18 @@ print_fix(struct gps_data_t *gpsdata)
 			    fix->mode);
 			break;
 		}
-	    if (gpsdata->satellites_used > 0)
-	    	fprintf(logfile, "    <sat>%d</sat>\n",
-		    gpsdata->satellites_used);
-	    if (!isnan(gpsdata->dop.hdop))
-		fprintf(logfile, "    <hdop>%.1f</hdop>\n", gpsdata->dop.hdop);
-	    if (!isnan(gpsdata->dop.vdop))
-		fprintf(logfile, "    <vdop>%.1f</vdop>\n", gpsdata->dop.vdop);
-	    if (!isnan(gpsdata->dop.pdop))
-		fprintf(logfile, "    <pdop>%.1f</pdop>\n", gpsdata->dop.pdop);
+		if (gpsdata->satellites_used > 0)
+	    		fprintf(logfile, "    <sat>%d</sat>\n",
+			    gpsdata->satellites_used);
+		if (!isnan(gpsdata->dop.hdop))
+			fprintf(logfile, "    <hdop>%.1f</hdop>\n",
+			    gpsdata->dop.hdop);
+		if (!isnan(gpsdata->dop.vdop))
+			fprintf(logfile, "    <vdop>%.1f</vdop>\n",
+			    gpsdata->dop.vdop);
+		if (!isnan(gpsdata->dop.pdop))
+			fprintf(logfile, "    <pdop>%.1f</pdop>\n",
+			    gpsdata->dop.pdop);
 	}
 	fprintf(logfile, "   </trkpt>\n");
 	fflush(logfile);
