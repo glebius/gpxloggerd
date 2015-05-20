@@ -149,13 +149,12 @@ print_fix(struct gps_data_t *gpsdata)
 	fflush(logfile);
 }
 
-static FILE *
+static void
 opennewfile(char *template)
 {
 	char	fname[PATH_MAX];
 	time_t	t;
 	size_t	s;
-	FILE	*r;
 
 	t = time(NULL);
 	s = strftime(fname, sizeof(fname), template, localtime(&t));
@@ -163,13 +162,13 @@ opennewfile(char *template)
 		syslog(LOG_ERR, "Bad template \"%s\"", template);
 		exit(1);
 	}
-	r = fopen(fname, "w");
-	if (r == NULL) {
+	logfile = fopen(fname, "w");
+	if (logfile == NULL) {
 		syslog(LOG_ERR, "Failed to open %s: %m", fname);
 		exit(1);
 	}
 	syslog(LOG_DEBUG, "Opened %s for writing", fname);
-	return (r);
+	print_gpx_header();
 }
 
 static void
@@ -256,18 +255,18 @@ enqueue_signal(int sig)
 }
 
 static void
-process_signal(int fd)
+process_signal(void)
 {
 	int sig;
 
-	while (read(fd, &sig, sizeof sig) == sizeof(sig)) {
+	while (read(signal_fd[0], &sig, sizeof sig) == sizeof(sig)) {
 		syslog(LOG_DEBUG, "caught signal: %d", sig);
 		switch (sig) {
 		case SIGHUP:
 			if (o_template == NULL)
 				return;
 			print_gpx_footer();
-			logfile = opennewfile(o_template);
+			opennewfile(o_template);
 			print_gpx_header();
 			break;
 		case SIGINT:
@@ -448,13 +447,14 @@ main(int argc, char **argv)
 
 	/* Open log file. */
 	if (o_template != NULL)
-		logfile = opennewfile(o_template);
+		opennewfile(o_template);
 	else {
 		if (o_daemon) {
 			syslog(LOG_ERR, "Daemon mode and no valid filename specified - exiting.");
 			exit(1);
 		}
 		logfile = stdout;
+		print_gpx_header();
 	}
 
 	/* Catch and queue all interesting signals. */
@@ -474,10 +474,13 @@ main(int argc, char **argv)
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
 
+reopen:
 	if (gps_open(server, port, &gpsdata) != 0) {
 		syslog(LOG_ERR, "failed to connect to %s:%s: %d, %s",
 		    server, port, errno, gps_errstr(errno));
-		exit(1);
+		sleep(3);
+		process_signal();
+		goto reopen;
 	} else
 		syslog(LOG_NOTICE, "connected to gpsd at %s:%s",
 		    server, port);
@@ -490,8 +493,6 @@ main(int argc, char **argv)
 	gpsdata.dop.pdop = NAN;
 	gps_stream(&gpsdata, WATCH_ENABLE | (device != NULL ? WATCH_DEVICE : 0),
 	    device);
-
-	print_gpx_header();
 
 	FD_ZERO(&fds0);
 	fdmax = 0;
@@ -512,13 +513,22 @@ main(int argc, char **argv)
 		if (n == -1) {
 			if (errno == EINTR)
 				continue;
-			syslog(LOG_ERR, "select(2): %m");
+			syslog(LOG_ERR, "select(2): %m, exiting");
 			break;
 		}
 		if (FD_ISSET(signal_fd[0], &fds))
-			process_signal(signal_fd[0]);
+			process_signal();
 		if (FD_ISSET(gpsdata.gps_fd, &fds)) {
-			(void )gps_read(&gpsdata);
+			n = gps_read(&gpsdata);
+			if (n < 0) {
+				syslog(LOG_ERR, "gps_read(): %m, reopening");
+				gps_close(&gpsdata);
+				if (o_template != NULL) {
+					print_gpx_footer();
+					opennewfile(o_template);
+				}
+				goto reopen;
+			}
 			process(&gpsdata);
 		}
 	}
