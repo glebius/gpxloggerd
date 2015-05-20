@@ -119,15 +119,15 @@ print_fix(struct gps_data_t *gpsdata)
 	fprintf(logfile, "    <time>%s</time>\n", unix_to_iso8601(fix->time,
 	    tbuf, sizeof(tbuf)));
 	if (verbose) {
-	    if (gpsdata->status == STATUS_DGPS_FIX)
-		fprintf(logfile, "    <fix>dgps</fix>\n");
-	    else
 		switch (fix->mode) {
 		case MODE_3D:
 			fprintf(logfile, "    <fix>3d</fix>\n");
 			break;
 		case MODE_2D:
 			fprintf(logfile, "    <fix>2d</fix>\n");
+			break;
+		case MODE_NO_FIX:
+			fprintf(logfile, "    <fix>none</fix>\n");
 			break;
 		default:
 			syslog(LOG_WARNING, "%s: unexpected fix %d", __func__,
