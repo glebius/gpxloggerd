@@ -371,7 +371,7 @@ main(int argc, char **argv)
 		verbose = true;
 		break;
 	case 'V':
-		fprintf(stderr, "$Id: gpxloggerd.c,v 1.30 2011/03/24 15:24:18 glebius Exp $\n");
+		fprintf(stderr, "gpxloggerd 0.2.2\n");
 		exit(0);
 	case 'u':
 		user = optarg;
