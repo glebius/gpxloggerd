@@ -65,7 +65,7 @@ static double	minbearing = 0;	/* degrees */
 static bool	verbose = false;
 
 static void
-print_gpx_header()
+print_gpx_header(void)
 {
 	fprintf(logfile, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 	fprintf(logfile, "<gpx version=\"1.1\" creator=\"gpxloggerd\"\n");
@@ -79,7 +79,7 @@ print_gpx_header()
 }
 
 static void
-print_gpx_trk_end()
+print_gpx_trk_end(void)
 {
 	fprintf(logfile, "  </trkseg>\n");
 	fprintf(logfile, " </trk>\n");
@@ -88,7 +88,7 @@ print_gpx_trk_end()
 }
 
 static void
-print_gpx_footer()
+print_gpx_footer(void)
 {
 	if (intrack)
 		print_gpx_trk_end();
@@ -97,7 +97,7 @@ print_gpx_footer()
 }
 
 static void
-print_gpx_trk_start()
+print_gpx_trk_start(void)
 {
 	fprintf(logfile, " <trk>\n");
 	fprintf(logfile, "  <trkseg>\n");
@@ -285,13 +285,13 @@ process_signal(void)
 }
 
 static void
-unlink_pidfile()
+unlink_pidfile(void)
 {
 	(void )unlink(pidfile);
 }
 
 static void
-usage()
+usage(void)
 {
 	fprintf(stderr, "%s%s%s\n%s\n%s\n%s\n%s\n",
 "Usage: ", progname, " [-V] [-d] [-h] [-v] [-D level] [-p pidfile]",
