@@ -188,6 +188,7 @@ process(struct gps_data_t *gpsdata)
 	if (fix->mode < MODE_2D)
 		return;
 
+	move = 0; /* stupid old gcc */
 	t = (time_t )floor(fix->time);
 	ot = (time_t )floor(ofix.time);
 	if (minbearing)
@@ -419,6 +420,7 @@ main(int argc, char **argv)
 
 	/* setuid()/setgid() */
 	if (user != NULL) {
+		grp = NULL; /* stupid old gcc */
 		if ((c = strchr(user, ':')) != NULL) {
 			*c = '\0';
 			group = ++c;
