@@ -48,6 +48,8 @@
 
 #include <gps.h>
 
+#include "timespecop.h"
+
 static bool intrack = false;
 
 static char	*o_template;
@@ -57,8 +59,8 @@ static char 	*device;
 static const char *server = "localhost";
 static const char *port = DEFAULT_GPSD_PORT;
 static char	*pidfile;
-static time_t	timeout = 300;	/* seconds */
-static time_t	interval = 1;	/* seconds */
+static struct timespec	timeout =  { 300 /* seconds */, 0 };
+static struct timespec	interval = { 1 /* seconds */, 0 };
 static double	minmove = 0;	/* meters */
 static double	maxseg = 200;	/* meters */
 static double	minbearing = 0;	/* degrees */
@@ -114,8 +116,8 @@ print_fix(struct gps_data_t *gpsdata)
 	    fix->latitude, fix->longitude);
 	if (!isnan(fix->altitude))
 		fprintf(logfile, "    <ele>%.f</ele>\n", fix->altitude);
-	fprintf(logfile, "    <time>%s</time>\n", unix_to_iso8601(fix->time,
-	    tbuf, sizeof(tbuf)));
+	fprintf(logfile, "    <time>%s</time>\n",
+	    timespec_to_iso8601(fix->time, tbuf, sizeof(tbuf)));
 	if (verbose) {
 		switch (fix->mode) {
 		case MODE_3D:
@@ -181,23 +183,15 @@ process(struct gps_data_t *gpsdata)
 
 	struct gps_fix_t *fix = &gpsdata->fix;
 	double move, bearing;
-	/* time, last logged time, previous obtained time */
-	time_t t, ot, pt;
+	struct timespec ts;
 
 	/* No fix. */
 	if (fix->mode < MODE_2D)
 		return;
 
-	move = 0; /* stupid old gcc */
-	t = (time_t )floor(fix->time);
-	ot = (time_t )floor(ofix.time);
-	if (minbearing)
-		pt = (time_t )floor(pfix.time);
-	else
-		pt = ot;
-
 	/* -I filter */
-	if (labs(t - ot) < interval)
+	timespecsub(&fix->time, &ofix.time, &ts);
+	if (timespeccmp(&ts, &interval, <))
 		return;
 
 	if (minmove || minbearing)
@@ -225,7 +219,7 @@ process(struct gps_data_t *gpsdata)
 	/*
 	 * Make new track if the jump in time is above timeout.
 	 */
-	if (t - ot > timeout && !first) {
+	if (timespeccmp(&ts, &timeout, >) && !first) {
 		print_gpx_trk_end();
 		intrack = false;
 	}
@@ -301,7 +295,7 @@ usage(void)
 "       [-m meters] [-a degrees] [-M meters]",
 "       [server[:port[:device]]]");
 	fprintf(stderr, "\nDefaults to '%s -i %u %s:%s'\n",
-	    progname, (unsigned int )timeout, server, port);
+	    progname, (unsigned int )timeout.tv_sec, server, port);
 	exit(1);
 }
 
@@ -341,18 +335,18 @@ main(int argc, char **argv)
 		break;
 	    }
 	case 'I':	/* Set polling interval. */
-		interval = (time_t) atoi(optarg);
-		if (interval < 1)
-			interval = 1;
-		if (interval > 60)
+		interval.tv_sec = (time_t) atoi(optarg);
+		if (interval.tv_sec < 1)
+			interval.tv_sec = 1;
+		if (interval.tv_sec > 60)
 			syslog(LOG_WARNING, "Are you sane?"
 			    "Logging interval is more than a minute!");
 		break;
 	case 'i':	/* Set track timeout. */
-		timeout = (time_t) atoi(optarg);
-		if (timeout < 1)
-			timeout = 1;
-		if (timeout >= 3600)
+		timeout.tv_sec = (time_t) atoi(optarg);
+		if (timeout.tv_sec < 1)
+			timeout.tv_sec = 1;
+		if (timeout.tv_sec >= 3600)
 			syslog(LOG_WARNING,
 			    "track timeout is an hour or more!");
 		break;
@@ -521,7 +515,7 @@ reopen:
 		if (FD_ISSET(signal_fd[0], &fds))
 			process_signal();
 		if (FD_ISSET(gpsdata.gps_fd, &fds)) {
-			n = gps_read(&gpsdata);
+			n = gps_read(&gpsdata, NULL, 0);
 			if (n < 0) {
 				syslog(LOG_ERR, "gps_read(): %m, reopening");
 				gps_close(&gpsdata);
