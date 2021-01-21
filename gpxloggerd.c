@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2010,2011 Gleb Smirnoff <glebius@glebius.int.ru>
+ * Copyright (c) 2010,2011 Gleb Smirnoff <glebius@glebi.us>
  * Copyright (c) 2010,2011 by the GPSD project
  * Copyright (c) Amaury Jacquot
  * Copyright (c) Chris Kuethe
