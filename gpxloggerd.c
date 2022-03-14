@@ -481,12 +481,6 @@ reopen:
 		syslog(LOG_NOTICE, "connected to gpsd at %s:%s",
 		    server, port);
 
-	/* Initializes gpsdata structure. */
-	gpsdata.status = STATUS_NO_FIX;
-	gpsdata.satellites_used = 0;
-	gpsdata.dop.hdop = NAN;
-	gpsdata.dop.vdop = NAN;
-	gpsdata.dop.pdop = NAN;
 	gps_stream(&gpsdata, WATCH_ENABLE | (device != NULL ? WATCH_DEVICE : 0),
 	    device);
 
